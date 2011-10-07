@@ -1,0 +1,18 @@
+author: Raniy
+database: false
+description: "Provides an easy permission controlled method to flip your game mode."
+main: me.raniy.plugins.ToggleGameMode.ToggleGameMode
+name: ToggleGameMode
+startup: postworld
+url:
+version: v1.0
+commands:
+    togglegamemode:
+        description: Flips you from one gamemode to the other
+        usage: |
+            /togglegamemode 
+    tgm:
+        description: Flips you from one gamemode to the other
+        usage: |
+            /tgm
+            
