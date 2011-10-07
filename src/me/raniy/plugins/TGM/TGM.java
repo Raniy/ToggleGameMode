@@ -34,8 +34,8 @@ public class TGM extends JavaPlugin {
 	private String toggleGameModePermission = "ToggleGameMode.TGM";
 	
 	// commands
-	private final String toggleGameMode = "togglegamemode";
-	private final String toggleGameModeAlias = "tgm";
+	private String toggleGameMode = "togglegamemode";
+	private String toggleGameModeAlias = "tgm";
 	
 	// Notifications.
 	private String switchTo = ChatColor.WHITE + "Switched to:";
@@ -65,7 +65,7 @@ public class TGM extends JavaPlugin {
     		player = (Player) sender;
     	}
     	
-    	// Do ToggleGameMode/tgm
+    	// Do our command, whatever it might actually be called
     	if (((command.getName().equalsIgnoreCase(toggleGameMode)) || (command.getName().equalsIgnoreCase(toggleGameModeAlias))) && (!(player == null)))
     	{
     		if(player.hasPermission(toggleGameModePermission)){
@@ -113,11 +113,16 @@ public class TGM extends JavaPlugin {
     	this.myConfig = this.getConfiguration();
     	this.myProperties = new java.util.Properties();
     	// Load our startup variables, set defaults if no config was present
-    	this.toggleGameModePermission = this.myConfig.getString("ToggleGameModePermissionNode",toggleGameModePermission);
-    	this.switchTo = this.myConfig.getString("ToggledMessage.Base",switchTo);
-    	this.switchTo0 = this.myConfig.getString("ToggledMessage.Survival",switchTo0);
-    	this.switchTo1 = this.myConfig.getString("ToggledMessage.Creative",switchTo1);
-    	
+    	// Permission
+    	this.toggleGameModePermission = this.myConfig.getString("TGM.PermissionNode",toggleGameModePermission);
+    	// Message Strings
+    	this.switchTo = this.myConfig.getString("TGM.ToggledMessage.Base",this.switchTo);
+    	this.switchTo0 = this.myConfig.getString("TGM.ToggledMessage.Survival",this.switchTo0);
+    	this.switchTo1 = this.myConfig.getString("TGM.ToggledMessage.Creative",this.switchTo1);
+    	// Command and Alias
+    	// Until I figure a way to add our commands dynamically to the plugin.yml this is gonna have to be disabled.
+    	//this.toggleGameMode = this.myConfig.getString("TGM.Command",this.toggleGameMode);
+    	//this.toggleGameModeAlias = this.myConfig.getString("TGM.CommandAlias",this.toggleGameModeAlias);
     	//Make sure the config file is created.
     	this.myConfig.save();
 	}
