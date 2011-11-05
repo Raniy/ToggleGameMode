@@ -9,6 +9,7 @@
 package me.raniy.plugins.TGM;
 
 import java.util.logging.Logger;
+import org.bukkit.Bukkit;
 
 import org.bukkit.GameMode;
 import org.bukkit.command.Command;
@@ -18,6 +19,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.ChatColor;
+import ru.tehkode.permissions.PermissionManager;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 public class TGM extends JavaPlugin {
 	// Imported stuff
@@ -59,6 +62,7 @@ public class TGM extends JavaPlugin {
 		this.doLog("Enabled.");
 	}
 	
+        @Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		//Check sender / get Player
     	Player player = null;
@@ -70,7 +74,8 @@ public class TGM extends JavaPlugin {
     	// Do our command, whatever it might actually be called
     	if (((command.getName().equalsIgnoreCase(toggleGameMode)) || (command.getName().equalsIgnoreCase(toggleGameModeAlias))) && (!(player == null)))
     	{
-    		if(player.hasPermission(toggleGameModePermission) || player.isOp()){
+                // has our friend enough power?
+    		if(hasEnoughPower(player)){
     			String verboseModeString = "";
     			   			
     			// Determine game mode and flip it.
@@ -116,7 +121,7 @@ public class TGM extends JavaPlugin {
     		} else {
     			// This is our command, but they cant use it. Naughty.
     			// If we have a error message configured then send it and tell bukkit we handled the command.
-    			if(this.notPermissioned != "" || this.isInVerbose()){
+    			if(!this.notPermissioned.equals("") || this.isInVerbose()){
         			// If in Verbose mode then tell the console it happened. 
         			if (this.isInVerbose()){
         				this.doLog(player.getName() + " failed to switch game modes." + this.getVerboseModeLocationString(player));
@@ -170,9 +175,24 @@ public class TGM extends JavaPlugin {
 		this.inVerbose = inVerbose;
 		return inVerbose;
 	}
-	private String getVerboseModeLocationString(Player player){
+	private String getVerboseModeLocationString(Player player) {
 		String retval = "";
 		retval = " in world: " + player.getWorld().getName() + " at X: " + player.getLocation().getBlockX() + " Y: " + player.getLocation().getBlockY() + " Z: " + player.getLocation().getBlockZ() ;
 		return retval;
 	}
+        private boolean hasEnoughPower (Player player) {
+
+            if(player.hasPermission(toggleGameModePermission) || player.isOp()) {
+                return true;
+            }
+            // PermissionsEx check
+            else if (Bukkit.getServer().getPluginManager().isPluginEnabled("PermissionsEx")){
+                PermissionManager permissions = PermissionsEx.getPermissionManager();
+
+                if (permissions.has(player, toggleGameModePermission))
+                    return true;
+            }
+
+            return false;
+        }
 }
