@@ -18,13 +18,16 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.ChatColor;
+import ru.tehkode.permissions.PermissionManager;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
 
+@SuppressWarnings("deprecation")
 public class TGM extends JavaPlugin {
 	// Imported stuff
 	private Logger myLog=Logger.getLogger("Minecraft");
 	public PluginDescriptionFile myDesc = null;
 	public Configuration myConfig = null;
-	private boolean inVerbose = true;
+	private boolean inVerbose = false;
 	
 	// Constants
 	private final GameMode creativeMode = GameMode.CREATIVE;
@@ -39,7 +42,7 @@ public class TGM extends JavaPlugin {
 	
 	// Notifications.
 	private String notPermissioned = "I'm sorry Dave. I can't let you do that.";
-	private String switchTo = ChatColor.WHITE + "GameMode switched to:";
+	private String switchTo = ChatColor.WHITE + "Gamemode switched to:";
 	private String switchTo1 = ChatColor.GREEN + " Creative Mode" + ChatColor.WHITE;
 	private String switchTo0 = ChatColor.GREEN + " Survival Mode" + ChatColor.WHITE;
 	
@@ -56,6 +59,9 @@ public class TGM extends JavaPlugin {
 		// Load my ymls
     	this.getMyYMLs();
 		
+		if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")){
+			this.doLog("I see PermissionsEx. I will use it.");
+		}
 		this.doLog("Enabled.");
 	}
 	
@@ -70,7 +76,7 @@ public class TGM extends JavaPlugin {
     	// Do our command, whatever it might actually be called
     	if (((command.getName().equalsIgnoreCase(toggleGameMode)) || (command.getName().equalsIgnoreCase(toggleGameModeAlias))) && (!(player == null)))
     	{
-    		if(player.hasPermission(toggleGameModePermission) || player.isOp()){
+    		if(this.hasPermissions(player, this.toggleGameModePermission)){
     			String verboseModeString = "";
     			   			
     			// Determine game mode and flip it.
@@ -175,4 +181,20 @@ public class TGM extends JavaPlugin {
 		retval = " in world: " + player.getWorld().getName() + " at X: " + player.getLocation().getBlockX() + " Y: " + player.getLocation().getBlockY() + " Z: " + player.getLocation().getBlockZ() ;
 		return retval;
 	}
+	
+	 private boolean hasPermissions(Player player, String thePermissionToCheckFor) {
+
+            if(player.hasPermission(thePermissionToCheckFor) || player.isOp()) {
+                return true;
+            }
+            // PermissionsEx check
+            else if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")){
+                PermissionManager PExInterface = PermissionsEx.getPermissionManager();
+
+                if (PExInterface.has(player, thePermissionToCheckFor))
+                    return true;
+            }
+
+        return false;
+   }
 }
