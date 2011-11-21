@@ -5,7 +5,7 @@ main: me.raniy.plugins.TGM.TGM
 name: TGM
 startup: postworld
 url:
-version: v1.5
+version: v1.6
 commands:
     togglegamemode:
         description: Flips you from one gamemode to the other

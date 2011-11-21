@@ -35,6 +35,9 @@ public class TGM extends JavaPlugin {
 	
 	//permissions
 	private String toggleGameModePermission = "ToggleGameMode.TGM";
+	private String toggleOthersGameModePermission = "ToggleGameMode.TGM.Other";
+	private String toggleAdminPermission = "ToggleGameMode.*";
+	
 	
 	// commands
 	private String toggleGameMode = "togglegamemode";
@@ -42,6 +45,8 @@ public class TGM extends JavaPlugin {
 	
 	// Notifications.
 	private String notPermissioned = "I'm sorry Dave. I can't let you do that.";
+	private String noSuchPlayer = "I couldn't find anyone with that name.";
+	private String switchBy = " by: ";
 	private String switchTo = ChatColor.WHITE + "Gamemode switched to:";
 	private String switchTo1 = ChatColor.GREEN + " Creative Mode" + ChatColor.WHITE;
 	private String switchTo0 = ChatColor.GREEN + " Survival Mode" + ChatColor.WHITE;
@@ -49,8 +54,6 @@ public class TGM extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		// TODO 
-		
 		this.doLog("Disabled.");
 	}
 
@@ -62,7 +65,7 @@ public class TGM extends JavaPlugin {
 		if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")){
 			this.doLog("I see PermissionsEx. I will use it.");
 		}
-		this.doLog("Enabled.");
+		this.doLog(this.myDesc.getVersion() + " enabled.");
 	}
 	
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -72,70 +75,170 @@ public class TGM extends JavaPlugin {
     	{
     		player = (Player) sender;
     	}
-    	
     	// Do our command, whatever it might actually be called
     	if (((command.getName().equalsIgnoreCase(toggleGameMode)) || (command.getName().equalsIgnoreCase(toggleGameModeAlias))) && (!(player == null)))
-    	{
-    		if(this.hasPermissions(player, this.toggleGameModePermission)){
-    			String verboseModeString = "";
-    			   			
-    			// Determine game mode and flip it.
-    			switch(player.getGameMode().getValue()){
-    				case(0):
-    					// Switch to 1
-    					player.setGameMode(this.creativeMode);
-    					if (this.isInVerbose()){
-    						verboseModeString = player.getName() + ": " + this.switchTo + this.switchTo1 + this.getVerboseModeLocationString(player);
-    						this.doLog(verboseModeString);
-    						Player onlinePlayers[] = this.getServer().getOnlinePlayers();
-    						
-    						for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
-    							if (onlinePlayers[cnt].isOp()){
-    								onlinePlayers[cnt].sendMessage(verboseModeString);
-    							}
-    						}
+    	{ 
+    		//We need to see which version of the command we are doing IE self or other.
+    		//See if they are toggling themselves or trying to toggle someone else.
+    		if (args.length > 0)
+    		{
+    			//	They gave an argument IE they are trying to toggle someone else
+        		// See if they are allowed. 
+    			if(this.hasPermissions(player, this.toggleOthersGameModePermission) | this.hasPermissions(player, this.toggleAdminPermission))
+    			{
+    				// They are allowed to flip other people. Lets see who they are trying to flip.
+        			String theName = args[0];
+        			Player targetPlayer = null;
+        			// Idiot Checking: See if target is valid.	
+    				targetPlayer = this.getServer().getPlayerExact(theName);
+    			 
+    				if (targetPlayer != null)
+    				{
+    					//The target is valid
+    					// Is targetPlayer sender? :)
+    					if(player == targetPlayer)
+    					{
+    						// LOL. OK bit wordier then just typing the command but why not...
+    						flipPlayersGameMode(player);
+    						return true;
+    					} else {
+    						// Toggle the target
+    						this.flipPlayersGameMode(targetPlayer,player);
+    						return true;
     					}
-    					// Notify player of switch to 1
-    					player.sendMessage(switchTo + switchTo1);
-    					break;
-    				case(1):
-    					// Switch to 0
-    					player.setGameMode(this.survivalMode);
-    					if (this.isInVerbose()){
-    						verboseModeString = player.getName() + ": " + this.switchTo + this.switchTo0 + this.getVerboseModeLocationString(player);
-    						this.doLog(verboseModeString);
-    						Player onlinePlayers[] = this.getServer().getOnlinePlayers();
-    						
-    						for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
-    							if (onlinePlayers[cnt].isOp()){
-    								onlinePlayers[cnt].sendMessage(verboseModeString);
-    							}
-    						}
-    					}
-    					// Notify player of switch to 0
-    					player.sendMessage(switchTo + switchTo0);
-    				break;
-    			}
-    			// Tell bukkit we handled the command
-    			
-    			return true;
-    		} else {
-    			// This is our command, but they cant use it. Naughty.
-    			// If we have a error message configured then send it and tell bukkit we handled the command.
-    			if(this.notPermissioned != "" || this.isInVerbose()){
-        			// If in Verbose mode then tell the console it happened. 
-        			if (this.isInVerbose()){
-        				this.doLog(player.getName() + " failed to switch game modes." + this.getVerboseModeLocationString(player));
+    				} else {
+    					// Inform them the target could not be found.
+    					player.sendMessage(this.noSuchPlayer);
+    					return true;
+    				}
+    			} else {
+    				//They dont have permission to toggle others.
+        			// If we have a error message configured then send it and tell bukkit we handled the command.
+        			if(this.notPermissioned != "" || this.isInVerbose()){
+            			// If in Verbose mode then tell the console it happened. 
+            			if (this.isInVerbose()){
+            				this.doLog(player.getName() + " failed to switch game modes." + this.getVerboseModeLocationString(player));
+            			}
+        				player.sendMessage(notPermissioned);
+        				//Tell bukkit we process the command.
+        				return true;
         			}
-    				player.sendMessage(notPermissioned);
-    				//Tell bukkit we process the command.
-    				return true;
+        			
+        			return false;
     			}
-  			return false;
+    		} else {
+    			// 	They are toggling themselves.
+    			// See if they are allowed
+    			if(this.hasPermissions(player, this.toggleGameModePermission) | this.hasPermissions(player, this.toggleAdminPermission))
+    			{
+    				// Allowed
+    				this.flipPlayersGameMode(player);
+    				return true;
+    			} else {
+    				// Not allowed
+        			// If we have a error message configured then send it and tell bukkit we handled the command.
+        			if(this.notPermissioned != "" || this.isInVerbose()){
+            			// If in Verbose mode then tell the console it happened. 
+            			if (this.isInVerbose()){
+            				this.doLog(player.getName() + " failed to switch game modes." + this.getVerboseModeLocationString(player));
+            			}
+        				player.sendMessage(notPermissioned);
+        				//Tell bukkit we process the command.
+        				return true;
+        			}
+        			
+        			return false;
+    			}
     		}
     	}
+    	// Not our command, we dont care.
     	// Tell Bukkit we didnt process this command
     	return false;
+	}
+	
+	private boolean flipPlayersGameMode(Player targetPlayer, Player callingPlayer){
+		String verboseModeString = "";
+		
+		// Determine game mode and flip it.
+		switch(targetPlayer.getGameMode().getValue()){
+			case(0):
+				// Switch to 1
+				targetPlayer.setGameMode(this.creativeMode);
+				if (this.isInVerbose())
+				{
+					verboseModeString = targetPlayer.getName() + ": " + this.switchTo + this.switchTo1 + this.getVerboseModeLocationString(targetPlayer) + this.switchBy + callingPlayer.getName();
+					this.doLog(verboseModeString);
+					Player onlinePlayers[] = this.getServer().getOnlinePlayers();
+					for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
+						if (onlinePlayers[cnt].isOp()){
+							onlinePlayers[cnt].sendMessage(verboseModeString);
+						}
+					}
+				}
+				// Notify player of switch to 1
+				targetPlayer.sendMessage(switchTo + switchTo1);
+				return true;
+			case(1):
+				// Switch to 0
+				targetPlayer.setGameMode(this.survivalMode);
+				if (this.isInVerbose()){
+					verboseModeString = targetPlayer.getName() + ": " + this.switchTo + this.switchTo0 + this.getVerboseModeLocationString(targetPlayer) + this.switchBy + callingPlayer.getName();
+					this.doLog(verboseModeString);
+					Player onlinePlayers[] = this.getServer().getOnlinePlayers();
+					
+					for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
+						if (onlinePlayers[cnt].isOp()){
+							onlinePlayers[cnt].sendMessage(verboseModeString);
+						}
+					}
+				}
+				// Notify player of switch to 0
+				targetPlayer.sendMessage(switchTo + switchTo0);
+				return true;
+		}
+		return false;
+	}
+	private boolean flipPlayersGameMode(Player targetPlayer){
+		String verboseModeString = "";
+			
+		// Determine game mode and flip it.
+		switch(targetPlayer.getGameMode().getValue()){
+			case(0):
+				// Switch to 1
+				targetPlayer.setGameMode(this.creativeMode);
+				if (this.isInVerbose())
+				{
+					verboseModeString = targetPlayer.getName() + ": " + this.switchTo + this.switchTo1 + this.getVerboseModeLocationString(targetPlayer);
+					this.doLog(verboseModeString);
+					Player onlinePlayers[] = this.getServer().getOnlinePlayers();
+					for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
+						if (onlinePlayers[cnt].isOp()){
+							onlinePlayers[cnt].sendMessage(verboseModeString);
+						}
+					}
+				}
+				// Notify player of switch to 1
+				targetPlayer.sendMessage(switchTo + switchTo1);
+				return true;
+			case(1):
+				// Switch to 0
+				targetPlayer.setGameMode(this.survivalMode);
+				if (this.isInVerbose()){
+					verboseModeString = targetPlayer.getName() + ": " + this.switchTo + this.switchTo0 + this.getVerboseModeLocationString(targetPlayer);
+					this.doLog(verboseModeString);
+					Player onlinePlayers[] = this.getServer().getOnlinePlayers();
+					
+					for(int cnt = 0; cnt < onlinePlayers.length; cnt++){
+						if (onlinePlayers[cnt].isOp()){
+							onlinePlayers[cnt].sendMessage(verboseModeString);
+						}
+					}
+				}
+				// Notify player of switch to 0
+				targetPlayer.sendMessage(switchTo + switchTo0);
+				return true;
+		}
+		return false;
 	}
 
 	public void doLog(String strLog)
@@ -149,13 +252,17 @@ public class TGM extends JavaPlugin {
     	this.myConfig = this.getConfiguration();
     	// Load our startup variables, set defaults if no config was present
     	// Permission
-    	this.toggleGameModePermission = this.myConfig.getString("TGM.PermissionNode",toggleGameModePermission);
+    	this.toggleGameModePermission = this.myConfig.getString("TGM.Permissions.SelfNode",this.toggleGameModePermission);
+    	this.toggleOthersGameModePermission = this.myConfig.getString("TGM.Permissions.OthersNode",this.toggleOthersGameModePermission);
+    	this.toggleAdminPermission = this.myConfig.getString("TGM.Permissions.AdminNode",this.toggleAdminPermission);
+    	
     	// Message Strings
     	this.switchTo = this.myConfig.getString("TGM.ToggledMessage.Base",this.switchTo);
     	this.switchTo0 = this.myConfig.getString("TGM.ToggledMessage.Survival",this.switchTo0);
     	this.switchTo1 = this.myConfig.getString("TGM.ToggledMessage.Creative",this.switchTo1);
     	this.notPermissioned = this.myConfig.getString("TGM.NoPermissionsMessage", this.notPermissioned);
-    	
+    	this.noSuchPlayer = this.myConfig.getString("TGM.NoSuchPlayerMessage", this.noSuchPlayer);
+    	this.switchBy = this.myConfig.getString("TGM.SwitchedBy", this.switchBy);
     	// Verbose Mode
     	this.setInVerbose(this.myConfig.getBoolean("TGM.VerboseMode", this.isInVerbose()));
 
@@ -197,4 +304,5 @@ public class TGM extends JavaPlugin {
 
         return false;
    }
-}
+	 
+ }
