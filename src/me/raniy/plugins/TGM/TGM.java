@@ -177,6 +177,7 @@ public class TGM extends JavaPlugin {
 				}
 				// Notify player of switch to 1
 				targetPlayer.sendMessage(switchTo + switchTo1);
+				callingPlayer.sendMessage(targetPlayer.getName() + ":" + switchTo + switchTo1);
 				return true;
 			case(1):
 				// Switch to 0
@@ -194,6 +195,7 @@ public class TGM extends JavaPlugin {
 				}
 				// Notify player of switch to 0
 				targetPlayer.sendMessage(switchTo + switchTo0);
+				callingPlayer.sendMessage(targetPlayer.getName() + ":" + switchTo + switchTo0);
 				return true;
 		}
 		return false;
